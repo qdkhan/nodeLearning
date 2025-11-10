@@ -1,9 +1,8 @@
-import http from "http"
 import fs from 'fs'
-const PORT = 3000
 
-const server = http.createServer(function (req, res) {
-    res.setHeader('Content-Type', 'html')
+const userRequestHandler = (req, res) =>  {
+    console.log(req.url, req.method)
+    res.setHeader('Content-Type', 'text/html')
     res.write('<html>')
     res.write('<head><title>Server Created</title></head>')
 
@@ -33,10 +32,30 @@ const server = http.createServer(function (req, res) {
         res.write('</html>')
         return res.end()
     } else if(req.url.toLowerCase() === '/form_data' && req.method === 'POST') {
-        fs.writeFileSync('User.txt', 'I am a PHP Developer')
-        res.statusCode = 200
-        res.setHeader('Location', '/')
-        return res.end()
+        const body = [] 
+        req.on("data", chunk => {
+            console.log(chunk)
+            body.push(chunk)
+        })
+
+        req.on("end", () => {
+
+            const fullBody = Buffer.concat(body).toString()
+            // console.log(fullBody)
+            const params = new URLSearchParams(fullBody)
+            console.log(params)
+            // const bodyObject = {}
+            // for(const [key, val] of params.entries()) {
+            //     bodyObject[key] = val
+            // }
+
+            const bodyObject = Object.fromEntries(params)
+            // console.log(bodyObject)
+            fs.writeFileSync('UserData.txt', JSON.stringify(bodyObject))
+            res.statusCode = 302
+            res.setHeader('Location', '/')
+            res.end()
+        })
     } else if (req.url.toLowerCase() === '/contact') {
         // Contact page with a table
         res.write(`
@@ -73,6 +92,6 @@ const server = http.createServer(function (req, res) {
     
     res.write('</html>')
     return res.end()
-}).listen(3000, () => {
-     console.log(`Server is running on Port http://localhost:${PORT}`)
-})
+}
+
+export default userRequestHandler;
